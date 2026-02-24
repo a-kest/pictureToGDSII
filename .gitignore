@@ -1,0 +1,9 @@
+# python
+venv/
+__pycache__
+
+# bitmap
+*.bmp
+
+# gds
+*.gds
