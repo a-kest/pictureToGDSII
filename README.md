@@ -38,30 +38,30 @@ See `./pictureToGDSII.py -h` for help.
 - Adjustable gds layer number: `--layer-num <LAYER_NUM>`
 - Adjustable rectangle size on gds layer: `--pixel-size <PIXEL_SIZE [um]>`
 - Optional masked expansion to control random pixels: `--masked <EXPANSION_ITERATIONS>`
-- Automatic removal of diagonal pixels, which are often not manufacturable: `--pixel-cleanup <CLEANUP_TYPE>`
+- Automatic cleanup of diagonal pixels, which are often not manufacturable: `--pixel-cleanup <CLEANUP_TYPE>`
   - remove
   - add
   - balanced
   - random
 - Adaptive gaussian threshold: `--adaptive-threshold <KERNEL_SIZE> <OFFSET>`
 - Multiple dithering types: `--dithering <DITHER_TYPE>`
-    - 1.  Floyd-Steinberg (fs)
-    - 2.  Jarvis-Judice-Ninke (jjn)
-    - 3.  Stucki (st)
-    - 4.  Atkinson (a)
-    - 5.  Burkes (b)
-    - 6.  Sierra (s)
-    - 7.  Sierra-Filter-Lite (sfl)
-    - 8.  Sierra-Two-Row (str)
-    - 9.  Halftone2x2 (h2)
-    - 10. Halftone4x4 (h4)
-    - 11. Bayer2x2 (b2)
-    - 12. Bayer4x4 (b4)
-    - 13. Bayer8x8 (b8)
+    - 1\.  Floyd-Steinberg (fs)
+    - 2\.  Jarvis-Judice-Ninke (jjn)
+    - 3\.  Stucki (st)
+    - 4\.  Atkinson (a)
+    - 5\.  Burkes (b)
+    - 6\.  Sierra (s)
+    - 7\.  Sierra-Filter-Lite (sfl)
+    - 8\.  Sierra-Two-Row (str)
+    - 9\.  Halftone2x2 (h2)
+    - 10\. Halftone4x4 (h4)
+    - 11\. Bayer2x2 (b2)
+    - 12\. Bayer4x4 (b4)
+    - 13\. Bayer8x8 (b8)
 
 ## TODO
-- include automatic fill insertion for a specified area
-- include min/max density constraints
+- [ ] include automatic fill insertion for a specified area
+- [ ] include min/max density constraints
 
 ## Thanks to
 This project takes some inspiration from [kadomoto/picture-to-gds](https://github.com/kadomoto/picture-to-gds).
