@@ -42,10 +42,11 @@ class PictureToGDSII:
                  dithering=args.dithering,
                  adaptive_threshold=args.adaptive_threshold,
                  masked=args.masked,
-                 pixel_cleanup=args.pixel_cleanup)
+                 pixel_cleanup=args.pixel_cleanup,
+                 fill_max_distance=args.fill_max_distance)
 
     def run(self, input_file:str, output_file:str, layer_num:int, pixel_size:float, width_max:float=None, height_max:float=None, scale:float=1.0,
-            dithering:str=None, adaptive_threshold:list=None, masked:int=None, pixel_cleanup:str=None):
+            dithering:str=None, adaptive_threshold:list=None, masked:int=None, pixel_cleanup:str=None, fill_max_distance:float=None):
         """ Run pictureToGDSII """
         # --------------------------------
         # read image
@@ -104,10 +105,22 @@ class PictureToGDSII:
             self._debug_save_bmp(f"{output_file}_6_1_pixel_clean_debug.bmp", debug_pixel_clean_image)
 
         # --------------------------------
+        # fill pixels -> add pixels to sparse areas (for manufacturability)
+        # --------------------------------
+        filled_image = pixel_clean_image
+        if fill_max_distance:
+            self._print(f"Filling pixels")
+            filled_image, debug_filled_image = self.fill_image(pixel_clean_image, pixel_size, fill_max_distance)
+            stats = {tuple(k):int(v) for k,v in zip(*np.unique(debug_filled_image.reshape(-1, 3), axis=0, return_counts=True))}
+            self._verbose_print(f"Stats: {stats.get((0, 255, 0), 0)} pixels added. {stats.get((0, 0, 255), 0)} pixels removed.")
+            self._debug_save_bmp(f"{output_file}_7_filled.bmp", filled_image)
+            self._debug_save_bmp(f"{output_file}_7_1_filled_debug.bmp", debug_filled_image)
+
+        # --------------------------------
         # write gds
         # --------------------------------
         self._verbose_print(f"Generating {output_file}.gds")
-        created_rects = self.write_gds(pixel_clean_image, output_file=output_file, layer_num=layer_num, pixel_size=pixel_size)
+        created_rects = self.write_gds(filled_image, output_file=output_file, layer_num=layer_num, pixel_size=pixel_size)
         self._print(f"Generated: {output_file}.gds")
         self._verbose_print(f"Stats: {created_rects} rectangles created in {output_file}.gds")
 
@@ -168,6 +181,8 @@ class PictureToGDSII:
                             help="Applies masking on the image with expansion. Removes spread out pixels.")
         parser.add_argument("--pixel-cleanup", "-c", choices=["remove", "balanced", "random", "add"],
                             help="Determines how to handle diagonal pixels, which are often not manufacturable. 'remove' removes pixels, 'add' adds pixels, 'balanced' balances removal and addition of pixels. 'random' randomly adds or removes critical pixels.")
+        parser.add_argument("--fill-max-distance", "-f", default=None, type=float,
+                            help="Fill the remaining area with small squares at a given distance in [um].")
 
         # parse args
         if argcomplete:
@@ -467,6 +482,36 @@ class PictureToGDSII:
                         debug_out[y+1][x] = [0, 0, 255] # add red pixel when removing pixels from output
                 # flip balanced_add_remove
                 balanced_add = not balanced_add
+
+        return image_out, debug_out
+
+    def fill_image(self, image:np.ndarray, pixel_size:float, max_distance:float) -> np.ndarray:
+        """ Fills the image with pixels for manufacturability.
+            - in debug_out: added   pixels are green (0, 255, 0)
+
+            pixel_size is given in um.
+            max_distance is given in um.
+        """
+        image_out = np.copy(image)
+        debug_out = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        # calculations
+        height, width = image_out.shape
+        max_pixel_distance = int(max_distance/pixel_size)
+        # loop through image
+        for y in range(height-max_pixel_distance):
+            for x in range(width-max_pixel_distance):
+                # check square for pixels
+                no_pixel = True
+                for local_y in range(max_pixel_distance):
+                    for local_x in range(max_pixel_distance):
+                        if (image_out[y+local_y][x+local_x] == 0): # found a colored pixel
+                            no_pixel = False
+                            break
+                    if not no_pixel:
+                        break
+                if no_pixel:
+                    image_out[int(y+(max_pixel_distance/2))][int(x+(max_pixel_distance/2))] = 0
+                    debug_out[int(y+(max_pixel_distance/2))][int(x+(max_pixel_distance/2))] = [0, 255, 0] # place green in debug when adding pixels
 
         return image_out, debug_out
 
